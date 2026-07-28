@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoleCode {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum TransactionType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+  RETURN_IN
+  RETURN_OUT
+  REVERSAL
+}
+
+enum TransactionStatus {
+  CONFIRMED
+  REVERSED
+}
+
+model Role {
+  id          Int           @id @default(autoincrement())
+  code        RoleCode      @unique
+  name        String
+  description String?
+  users       UserProfile[]
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model UserProfile {
+  id                String                 @id @default(uuid()) @db.Uuid
+  authUserId        String                 @unique @map("auth_user_id") @db.Uuid
+  username          String                 @unique
+  email             String                 @unique
+  fullName          String                 @map("full_name")
+  avatarUrl         String?                @map("avatar_url")
+  status            UserStatus             @default(ACTIVE)
+  roleId            Int                    @map("role_id")
+  role              Role                   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  lastLoginAt       DateTime?              @map("last_login_at")
+  auditLogs         AuditLog[]
+  transactions      InventoryTransaction[]
+  stockIns          StockIn[]
+  stockOuts         StockOut[]
+  notifications     Notification[]
+  passwordUpdatedAt DateTime?              @map("password_updated_at")
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+
+  @@index([roleId])
+  @@index([status])
+  @@map("user_profiles")
+}
+
+model Category {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique
+  description String?
+  status      RecordStatus @default(ACTIVE)
+  products    Product[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "categories_name_trgm_idx")
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "categories_description_trgm_idx")
+  @@map("categories")
+}
+
+model Supplier {
+  id           String                 @id @default(uuid()) @db.Uuid
+  name         String
+  email        String?
+  phone        String?
+  address      String?
+  status       RecordStatus           @default(ACTIVE)
+  products     ProductSupplier[]
+  transactions InventoryTransaction[]
+  stockIns     StockIn[]
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@index([status])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "suppliers_name_trgm_idx")
+  @@index([email(ops: raw("gin_trgm_ops"))], type: Gin, map: "suppliers_email_trgm_idx")
+  @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin, map: "suppliers_phone_trgm_idx")
+  @@map("suppliers")
+}
+
+model Product {
+  id               String                     @id @default(uuid()) @db.Uuid
+  sku              String                     @unique
+  barcode          String?                    @unique
+  name             String
+  description      String?
+  imageUrl         String?                    @map("image_url")
+  categoryId       String                     @map("category_id") @db.Uuid
+  category         Category                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  costPrice        Decimal                    @default(0) @map("cost_price") @db.Decimal(18, 4)
+  averageCost      Decimal                    @default(0) @map("average_cost") @db.Decimal(18, 4)
+  sellingPrice     Decimal                    @default(0) @map("selling_price") @db.Decimal(18, 4)
+  quantity         Decimal                    @default(0) @db.Decimal(18, 4)
+  minimumStock     Decimal                    @default(0) @map("minimum_stock") @db.Decimal(18, 4)
+  unit             String
+  status           RecordStatus               @default(ACTIVE)
+  suppliers        ProductSupplier[]
+  transactionItems InventoryTransactionItem[]
+  stockIns         StockIn[]
+  stockOuts        StockOut[]
+  notifications    Notification[]
+  createdAt        DateTime                   @default(now()) @map("created_at")
+  updatedAt        DateTime                   @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([name])
+  @@index([status])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_name_trgm_idx")
+  @@index([sku(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_sku_trgm_idx")
+  @@index([barcode(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_barcode_trgm_idx")
+  @@map("products")
+}
+
+model ProductSupplier {
+  productId  String   @map("product_id") @db.Uuid
+  supplierId String   @map("supplier_id") @db.Uuid
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@id([productId, supplierId])
+  @@index([supplierId])
+  @@map("product_suppliers")
+}
+
+model InventoryTransaction {
+  id              String                     @id @default(uuid()) @db.Uuid
+  documentNumber  String                     @unique @map("document_number")
+  requestKey      String?                    @unique @map("request_key") @db.Uuid
+  type            TransactionType
+  status          TransactionStatus          @default(CONFIRMED)
+  supplierId      String?                    @map("supplier_id") @db.Uuid
+  supplier        Supplier?                  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  receiver        String?
+  department      String?
+  referenceNumber String?                    @map("reference_number")
+  notes           String?
+  transactionDate DateTime                   @default(now()) @map("transaction_date")
+  createdById     String                     @map("created_by_id") @db.Uuid
+  createdBy       UserProfile                @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items           InventoryTransactionItem[]
+  stockIn         StockIn?
+  stockOut        StockOut?
+  createdAt       DateTime                   @default(now()) @map("created_at")
+
+  @@index([type, transactionDate])
+  @@index([createdById, transactionDate])
+  @@index([supplierId])
+  @@index([referenceNumber])
+  @@index([status, transactionDate(sort: Desc)], map: "inventory_transactions_status_date_idx")
+  @@index([documentNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "inventory_transactions_document_trgm_idx")
+  @@index([referenceNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "inventory_transactions_reference_trgm_idx")
+  @@index([receiver(ops: raw("gin_trgm_ops"))], type: Gin, map: "inventory_transactions_receiver_trgm_idx")
+  @@index([department(ops: raw("gin_trgm_ops"))], type: Gin, map: "inventory_transactions_department_trgm_idx")
+  @@map("inventory_transactions")
+}
+
+model StockIn {
+  id             String               @id @default(uuid()) @db.Uuid
+  transactionId  String               @unique @map("transaction_id") @db.Uuid
+  transaction    InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  productId      String               @map("product_id") @db.Uuid
+  product        Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  supplierId     String               @map("supplier_id") @db.Uuid
+  supplier       Supplier             @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  quantity       Decimal              @db.Decimal(18, 4)
+  costPrice      Decimal              @map("cost_price") @db.Decimal(18, 4)
+  quantityBefore Decimal              @map("quantity_before") @db.Decimal(18, 4)
+  quantityAfter  Decimal              @map("quantity_after") @db.Decimal(18, 4)
+  date           DateTime
+  notes          String?
+  createdById    String               @map("created_by_id") @db.Uuid
+  createdBy      UserProfile          @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime             @default(now()) @map("created_at")
+
+  @@index([productId, date])
+  @@index([supplierId, date])
+  @@index([createdById, date])
+  @@map("stock_ins")
+}
+
+model StockOut {
+  id             String               @id @default(uuid()) @db.Uuid
+  transactionId  String               @unique @map("transaction_id") @db.Uuid
+  transaction    InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  productId      String               @map("product_id") @db.Uuid
+  product        Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity       Decimal              @db.Decimal(18, 4)
+  unitCost       Decimal              @map("unit_cost") @db.Decimal(18, 4)
+  quantityBefore Decimal              @map("quantity_before") @db.Decimal(18, 4)
+  quantityAfter  Decimal              @map("quantity_after") @db.Decimal(18, 4)
+  department     String
+  receiver       String
+  date           DateTime
+  notes          String?
+  createdById    String               @map("created_by_id") @db.Uuid
+  createdBy      UserProfile          @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime             @default(now()) @map("created_at")
+
+  @@index([productId, date])
+  @@index([createdById, date])
+  @@index([department, date])
+  @@map("stock_outs")
+}
+
+model InventoryTransactionItem {
+  id             String               @id @default(uuid()) @db.Uuid
+  transactionId  String               @map("transaction_id") @db.Uuid
+  transaction    InventoryTransaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  productId      String               @map("product_id") @db.Uuid
+  product        Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity       Decimal              @db.Decimal(18, 4)
+  unitCost       Decimal              @map("unit_cost") @db.Decimal(18, 4)
+  quantityBefore Decimal              @map("quantity_before") @db.Decimal(18, 4)
+  quantityAfter  Decimal              @map("quantity_after") @db.Decimal(18, 4)
+  createdAt      DateTime             @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@index([productId])
+  @@map("inventory_transaction_items")
+}
+
+model AuditLog {
+  id         BigInt       @id @default(autoincrement())
+  userId     String?      @map("user_id") @db.Uuid
+  user       UserProfile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String?      @map("entity_type")
+  entityId   String?      @map("entity_id")
+  metadata   Json?
+  ipAddress  String?      @map("ip_address")
+  userAgent  String?      @map("user_agent")
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id         String      @id @default(uuid()) @db.Uuid
+  type       String
+  title      String
+  message    String
+  sourceKey  String      @unique @map("source_key")
+  userId     String      @map("user_id") @db.Uuid
+  user       UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId  String      @map("product_id") @db.Uuid
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  readAt     DateTime?   @map("read_at")
+  resolvedAt DateTime?   @map("resolved_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId, resolvedAt, readAt])
+  @@index([productId, resolvedAt])
+  @@index([type, createdAt])
+  @@index([userId, resolvedAt, readAt, updatedAt(sort: Desc)], map: "notifications_user_feed_idx")
+  @@map("notifications")
+}

@@ -1,0 +1,40 @@
+"use client";
+
+import { ChevronDown, LogOut, UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/lib/auth/current-user";
+import { createClient } from "@/lib/supabase/client";
+
+export function UserProfileMenu() {
+  const router = useRouter();
+  const me = useCurrentUser();
+  const name = me.data?.fullName ?? "Admin";
+  const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "AD";
+
+  async function logout() {
+    await createClient().auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  }
+
+  return (
+    <details className="relative">
+      <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+        <span className="flex size-7 items-center justify-center rounded-md bg-cyan-700 text-xs text-white">{initials}</span>
+        <span className="hidden max-w-28 truncate sm:inline">{name}</span>
+        <ChevronDown className="size-4 text-slate-400" />
+      </summary>
+      <div className="absolute right-0 z-30 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className="border-b border-slate-100 p-3 dark:border-slate-800">
+          <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-100">{name}</p>
+          <p className="truncate text-xs text-slate-500">@{me.data?.username ?? "signed-in"}</p>
+          <p className="mt-1 text-xs font-medium text-cyan-700">{me.data?.role ?? "ADMIN"}</p>
+        </div>
+        {me.data?.role === "ADMIN" && (
+          <button onClick={() => router.push("/users")} className="mt-2 flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"><UserRound className="size-4" /> Users</button>
+        )}
+        <button onClick={logout} className="flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30"><LogOut className="size-4" /> Sign out</button>
+      </div>
+    </details>
+  );
+}

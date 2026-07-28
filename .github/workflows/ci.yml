@@ -1,0 +1,124 @@
+name: Inventory CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inventory-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npx prisma validate
+      - run: npm run verify
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:4000/api
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      - name: Block critical production dependency advisories
+        run: npm run security:dependencies
+
+  containers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: quality
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.api
+          push: false
+          tags: pos-inventory-api:ci
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: false
+          tags: pos-inventory-frontend:ci
+          build-args: |
+            NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000
+            NEXT_PUBLIC_API_URL=http://127.0.0.1:4000/api
+            NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci_placeholder
+
+  supabase-integration:
+    if: vars.RUN_SUPABASE_INTEGRATION == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [quality, containers]
+    environment: integration
+    env:
+      NODE_ENV: test
+      PORT: 4000
+      FRONTEND_URL: http://127.0.0.1:3000
+      SWAGGER_ENABLED: "true"
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4000/api
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      BOOTSTRAP_ADMIN_AUTH_USER_ID: ${{ secrets.BOOTSTRAP_ADMIN_AUTH_USER_ID }}
+      BOOTSTRAP_ADMIN_USERNAME: ${{ secrets.BOOTSTRAP_ADMIN_USERNAME }}
+      BOOTSTRAP_ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
+      BOOTSTRAP_ADMIN_NAME: Integration Administrator
+      TEST_ADMIN_USERNAME: ${{ secrets.TEST_ADMIN_USERNAME }}
+      TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
+      TEST_MANAGER_USERNAME: ${{ secrets.TEST_MANAGER_USERNAME }}
+      TEST_MANAGER_PASSWORD: ${{ secrets.TEST_MANAGER_PASSWORD }}
+      TEST_STAFF_USERNAME: ${{ secrets.TEST_STAFF_USERNAME }}
+      TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - name: Deploy migrations to the dedicated integration project
+        run: npx prisma migrate deploy
+      - name: Build test services
+        run: npm run build:api && npm run build
+      - name: Start API and frontend
+        run: |
+          npm run start:api > api.log 2>&1 &
+          npm run start > frontend.log 2>&1 &
+      - name: Wait for readiness
+        run: |
+          for attempt in {1..60}; do
+            curl --fail --silent http://127.0.0.1:4000/api/health/ready && curl --fail --silent http://127.0.0.1:3000/login && exit 0
+            sleep 2
+          done
+          cat api.log
+          cat frontend.log
+          exit 1
+      - run: npm run verify:integration
+      - name: Upload service logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-service-logs
+          path: |
+            api.log
+            frontend.log
