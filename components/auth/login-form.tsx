@@ -17,8 +17,9 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
     setLoading(true);
     setError("");
     const form = new FormData(event.currentTarget);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"}/auth/login`, {
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -39,8 +40,14 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
       }
       router.replace(safeInternalPath(nextPath));
       router.refresh();
-    } catch {
-      setError("The inventory service is unavailable. Please try again shortly.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown network error";
+      console.error("Login request failed", { apiUrl, message });
+      if (error instanceof DOMException && error.name === "TimeoutError") {
+        setError("The inventory service took too long to respond. Please try again.");
+        return;
+      }
+      setError(`The inventory service is unavailable. API: ${apiUrl}`);
     } finally {
       setLoading(false);
     }
