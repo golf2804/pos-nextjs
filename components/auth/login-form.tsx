@@ -1,15 +1,14 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LoaderCircle, LogIn } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { safeInternalPath } from "@/lib/auth/safe-redirect";
 
-export function LoginForm() {
+export function LoginForm({ nextPath }: { nextPath?: string }) {
   const router = useRouter();
-  const params = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,7 +37,7 @@ export function LoginForm() {
       setLoading(false);
       return;
     }
-    router.replace(safeInternalPath(params.get("next")));
+    router.replace(safeInternalPath(nextPath));
     router.refresh();
   }
 
