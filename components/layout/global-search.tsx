@@ -45,7 +45,7 @@ export function GlobalSearch() {
         <button
           type="button"
           onClick={() => { setMobileOpen(true); setFocused(true); }}
-          className="flex size-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-200 md:hidden"
+          className="flex size-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 md:hidden"
           title="Global search"
         >
           <Search className="size-4" />
@@ -59,7 +59,7 @@ export function GlobalSearch() {
           onChange={(event) => setQ(event.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => window.setTimeout(() => setFocused(false), 150)}
-          className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-10 text-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-950"
+          className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-10 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-cyan-500 dark:focus:ring-cyan-900/40"
           placeholder="Search inventory"
           aria-label="Search products, categories, suppliers, and transactions"
         />
@@ -80,7 +80,7 @@ export function GlobalSearch() {
       </div>
 
       {showResults && (
-        <div className="absolute right-0 top-12 z-50 max-h-[min(70vh,560px)] w-full min-w-[min(92vw,360px)] overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900 md:w-[420px]">
+        <div className="absolute right-0 top-12 z-50 max-h-[min(70vh,560px)] w-full min-w-[min(92vw,360px)] overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 shadow-xl shadow-slate-950/10 dark:border-slate-700 dark:bg-slate-900 md:w-[420px]">
           {results.isFetching && !results.data && (
             <p className="flex items-center justify-center gap-2 px-3 py-8 text-sm text-slate-500"><LoaderCircle className="size-4 animate-spin" /> Searching...</p>
           )}

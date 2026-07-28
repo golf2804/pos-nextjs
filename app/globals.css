@@ -2,13 +2,21 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fafaf9;
+  --background: #f1f5f9;
   --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: #dbe3ea;
+  --muted: #64748b;
 }
 
 .dark {
   --background: #020617;
   --foreground: #f8fafc;
+  --surface: #0f172a;
+  --surface-muted: #111827;
+  --border: #263244;
+  --muted: #94a3b8;
 }
 
 @theme inline {
@@ -24,6 +32,7 @@
 
 html {
   background: var(--background);
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -35,6 +44,18 @@ body {
 button,
 input {
   font: inherit;
+}
+
+input,
+select,
+textarea {
+  color-scheme: light;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  color-scheme: dark;
 }
 
 .skip-link {
@@ -76,17 +97,19 @@ button {
   height: 2.75rem;
   width: 100%;
   border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   padding: 0 0.75rem;
   font-size: 0.875rem;
   outline: none;
+  color: var(--foreground);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .dark .input {
-  border-color: #334155;
-  background: #0f172a;
-  color: #f8fafc;
+  border-color: var(--border);
+  background: #0b1220;
+  color: var(--foreground);
 }
 
 .input:focus {
@@ -119,6 +142,20 @@ button {
   background: transparent;
 }
 
+.app-shell-content {
+  background:
+    linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(241 245 249 / 0.98));
+}
+
+.dark .app-shell-content {
+  background:
+    linear-gradient(180deg, rgb(2 6 23 / 0.98), rgb(8 13 27 / 1));
+}
+
+.app-shell-content main {
+  color: var(--foreground);
+}
+
 .app-shell-content > main > header {
   display: none;
 }
@@ -138,14 +175,87 @@ button {
   display: block;
 }
 
+.app-shell-content article,
+.app-shell-content section.rounded-lg {
+  border-color: var(--border);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 12px 32px rgb(15 23 42 / 0.04);
+}
+
+.app-shell-content article.bg-white,
+.app-shell-content section.bg-white,
+.app-shell-content div.bg-white {
+  background-color: var(--surface);
+}
+
+.app-shell-content thead {
+  background-color: #eef4f8;
+}
+
+.dark .app-shell-content thead {
+  background-color: #172033;
+}
+
+.app-shell-content tbody tr {
+  transition: background-color 140ms ease;
+}
+
+.app-shell-content tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.dark .app-shell-content tbody tr:hover {
+  background-color: rgb(30 41 59 / 0.55);
+}
+
+.app-shell-content th {
+  color: #52627a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.dark .app-shell-content th {
+  color: #9aa8bc;
+}
+
+.app-shell-content td {
+  vertical-align: middle;
+}
+
+.app-shell-content input:not([type="checkbox"]):not([type="radio"]),
+.app-shell-content select,
+.app-shell-content textarea {
+  border-color: var(--border);
+  background-color: var(--surface);
+  color: var(--foreground);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.app-shell-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.app-shell-content select:focus,
+.app-shell-content textarea:focus {
+  border-color: #0891b2;
+  box-shadow: 0 0 0 4px rgb(103 232 249 / 0.28);
+}
+
+.app-shell-content button:not(:disabled),
+.app-shell-content a[href] {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.app-shell-content button:not(:disabled):active,
+.app-shell-content a[href]:active {
+  transform: translateY(1px);
+}
+
 /* Dark-mode coverage for legacy inventory screens while they share AppShell. */
 .dark .app-shell-content .bg-white {
-  background-color: #0f172a;
+  background-color: var(--surface);
 }
 
 .dark .app-shell-content .bg-stone-50,
 .dark .app-shell-content .bg-slate-50 {
-  background-color: #020617;
+  background-color: #111827;
 }
 
 .dark .app-shell-content .text-slate-950,
@@ -157,14 +267,14 @@ button {
 
 .dark .app-shell-content .text-slate-600,
 .dark .app-shell-content .text-slate-500 {
-  color: #cbd5e1;
+  color: var(--muted);
 }
 
 .dark .app-shell-content .border-slate-100,
 .dark .app-shell-content .border-slate-200,
 .dark .app-shell-content .border-slate-300,
 .dark .app-shell-content .divide-slate-100 > :not(:last-child) {
-  border-color: #334155;
+  border-color: var(--border);
 }
 
 .dark .app-shell-content input:not([type="checkbox"]):not([type="radio"]),

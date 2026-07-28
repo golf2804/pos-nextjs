@@ -43,7 +43,7 @@ const shellFreeRoutes = ["/login", "/forgot-password", "/reset-password", "/auth
 
 function Navigation({ pathname, role, onNavigate }: { pathname: string; role?: UserRole; onNavigate?: () => void }) {
   return (
-    <nav className="space-y-1 px-3 py-5">
+    <nav className="space-y-1.5 px-3 py-5">
       {navigation.filter((item) => canAccessAppRoute(item.href, role)).map((item) => {
         const Icon = item.icon;
         const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -55,13 +55,13 @@ function Navigation({ pathname, role, onNavigate }: { pathname: string; role?: U
             prefetch
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors ${
+            className={`group flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all ${
               active
-                ? "bg-slate-950 text-white shadow-sm dark:bg-cyan-700"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                ? "bg-slate-950 text-white shadow-sm shadow-slate-950/10 dark:bg-cyan-600 dark:shadow-cyan-950/20"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white"
             }`}
           >
-            <Icon className="size-4 shrink-0" />
+            <Icon className={`size-4 shrink-0 ${active ? "text-cyan-200 dark:text-white" : "text-slate-400 group-hover:text-cyan-700 dark:text-slate-500 dark:group-hover:text-cyan-300"}`} />
             <span>{item.label}</span>
           </Link>
         );
@@ -90,10 +90,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-slate-100 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:block">
+        <aside className="hidden w-72 shrink-0 border-r border-slate-200 bg-white/95 shadow-sm dark:border-slate-800 dark:bg-slate-900/95 lg:block">
           <Brand />
           <Navigation pathname={pathname} role={me.data?.role} />
         </aside>
@@ -114,11 +114,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         <section className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 md:px-6">
+          <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 shadow-sm shadow-slate-950/[0.03] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/85 md:px-6">
             <button
               type="button"
               onClick={() => setMobileMenuPath(pathname)}
-              className="flex size-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200 lg:hidden"
+              className="flex size-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 lg:hidden"
               title="Open navigation"
               aria-label="Open navigation"
               aria-expanded={mobileOpen}
@@ -174,12 +174,12 @@ function Brand({ close }: { close?: () => void }) {
   return (
     <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-6 dark:border-slate-800">
       <Link href="/" onClick={close} className="flex min-w-0 items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white dark:bg-cyan-700">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm shadow-slate-950/20 dark:bg-cyan-600 dark:shadow-cyan-950/20">
           <Warehouse className="size-5" />
         </span>
         <span>
-          <span className="block text-sm font-semibold uppercase text-cyan-700 dark:text-cyan-300">POS</span>
-          <span className="block text-lg font-semibold text-slate-950 dark:text-white">Inventory</span>
+          <span className="block text-xs font-semibold uppercase text-cyan-700 dark:text-cyan-300">POS</span>
+          <span className="block text-lg font-semibold leading-5 text-slate-950 dark:text-white">Inventory</span>
         </span>
       </Link>
       {close && (
