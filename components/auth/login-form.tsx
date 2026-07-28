@@ -17,28 +17,33 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
     setLoading(true);
     setError("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"}/auth/login`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        username: String(form.get("username")),
-        password: String(form.get("password")),
-      }),
-    });
-    if (!response.ok) {
-      setError("Invalid username or password.");
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"}/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          username: String(form.get("username")),
+          password: String(form.get("password")),
+        }),
+        signal: AbortSignal.timeout(75_000),
+      });
+      if (!response.ok) {
+        setError("Invalid username or password.");
+        return;
+      }
+      const session = await response.json() as { access_token: string; refresh_token: string };
+      const { error: sessionError } = await createClient().auth.setSession(session);
+      if (sessionError) {
+        setError(sessionError.message);
+        return;
+      }
+      router.replace(safeInternalPath(nextPath));
+      router.refresh();
+    } catch {
+      setError("The inventory service is unavailable. Please try again shortly.");
+    } finally {
       setLoading(false);
-      return;
     }
-    const session = await response.json() as { access_token: string; refresh_token: string };
-    const { error: sessionError } = await createClient().auth.setSession(session);
-    if (sessionError) {
-      setError(sessionError.message);
-      setLoading(false);
-      return;
-    }
-    router.replace(safeInternalPath(nextPath));
-    router.refresh();
   }
 
   return (
