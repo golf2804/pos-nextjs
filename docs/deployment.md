@@ -32,6 +32,19 @@ npm run verify:release
 
 The integration suite mutates catalog, user, and inventory fixtures. Never point it at production.
 
+## Render API Service
+
+Render must install dev dependencies during the build because Prisma CLI, Nest CLI, and TypeScript are build-time tools. If `NODE_ENV=production` is set in Render, a plain `npm ci` can skip those tools and the deploy can fail with exit status `127`.
+
+Use these settings for the NestJS API web service:
+
+```text
+Build Command: npm ci --include=dev && npm run build:render:api
+Start Command: npm run start:api
+```
+
+Set runtime environment variables in Render, including `NODE_ENV=production`, `FRONTEND_URL`, Supabase keys, `DATABASE_URL`, and `DIRECT_URL`. Keep frontend-only `NEXT_PUBLIC_*` values in Vercel.
+
 ## Containers
 
 ```bash

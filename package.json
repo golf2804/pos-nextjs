@@ -7,6 +7,7 @@
     "dev:api": "nest start --path server/tsconfig.json --watch",
     "build": "next build",
     "build:api": "nest build --path server/tsconfig.json",
+    "build:render:api": "npm run prisma:generate && npm run build:api",
     "start": "next start",
     "start:api": "node server/dist/main.js",
     "lint": "eslint",
