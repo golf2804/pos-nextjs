@@ -59,7 +59,7 @@ export function GlobalSearch() {
           onChange={(event) => setQ(event.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => window.setTimeout(() => setFocused(false), 150)}
-          className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-10 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-cyan-500 dark:focus:ring-cyan-900/40"
+          className="search-input-motion h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-10 text-sm text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-cyan-400 dark:focus:bg-slate-950 dark:focus:text-slate-50 dark:focus:ring-cyan-500/20"
           placeholder="Search inventory"
           aria-label="Search products, categories, suppliers, and transactions"
         />
@@ -80,7 +80,7 @@ export function GlobalSearch() {
       </div>
 
       {showResults && (
-        <div className="absolute right-0 top-12 z-50 max-h-[min(70vh,560px)] w-full min-w-[min(92vw,360px)] overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 shadow-xl shadow-slate-950/10 dark:border-slate-700 dark:bg-slate-900 md:w-[420px]">
+        <div className="absolute right-0 top-11 z-50 max-h-[min(70vh,560px)] w-full min-w-[min(92vw,360px)] animate-pop-in overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 shadow-xl shadow-slate-950/10 dark:border-slate-700 dark:bg-slate-900/98 dark:shadow-cyan-950/10 md:w-[420px]">
           {results.isFetching && !results.data && (
             <p className="flex items-center justify-center gap-2 px-3 py-8 text-sm text-slate-500"><LoaderCircle className="size-4 animate-spin" /> Searching...</p>
           )}
@@ -93,7 +93,7 @@ export function GlobalSearch() {
           {results.data?.products.length ? (
             <ResultGroup label="Products">
               {results.data.products.map((item) => (
-                <ResultButton key={item.id} icon={Boxes} title={item.name} detail={`${item.sku} · ${item.quantity} ${item.unit}`} onClick={() => navigate(`/products?q=${encodeURIComponent(item.sku)}`)} />
+                <ResultButton key={item.id} icon={Boxes} title={item.name} detail={`${item.sku} - ${item.quantity} ${item.unit}`} onClick={() => navigate(`/products?q=${encodeURIComponent(item.sku)}`)} />
               ))}
             </ResultGroup>
           ) : null}
@@ -114,7 +114,7 @@ export function GlobalSearch() {
           {results.data?.transactions.length ? (
             <ResultGroup label="Transactions">
               {results.data.transactions.map((item) => (
-                <ResultButton key={item.id} icon={FileText} title={item.documentNumber} detail={`${item.type.replaceAll("_", " ")} · ${item.items[0]?.product.name ?? "Inventory"}`} onClick={() => navigate(`/transactions?q=${encodeURIComponent(item.documentNumber)}`)} />
+                <ResultButton key={item.id} icon={FileText} title={item.documentNumber} detail={`${item.type.replaceAll("_", " ")} - ${item.items[0]?.product.name ?? "Inventory"}`} onClick={() => navigate(`/transactions?q=${encodeURIComponent(item.documentNumber)}`)} />
               ))}
             </ResultGroup>
           ) : null}
@@ -145,8 +145,8 @@ function ResultButton({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={onClick} className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-cyan-700 dark:bg-slate-800 dark:text-cyan-300"><Icon className="size-4" /></span>
+    <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={onClick} className="group flex w-full animate-result-rise items-center gap-3 rounded-md px-2 py-2 text-left transition hover:bg-slate-50 hover:shadow-sm dark:hover:bg-slate-800/80">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-cyan-700 transition-transform group-hover:scale-105 dark:bg-slate-800 dark:text-cyan-300"><Icon className="size-4" /></span>
       <span className="min-w-0">
         <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{title}</span>
         <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{detail}</span>

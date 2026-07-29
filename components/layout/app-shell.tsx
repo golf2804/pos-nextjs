@@ -55,12 +55,13 @@ function Navigation({ pathname, role, onNavigate }: { pathname: string; role?: U
             prefetch
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`group flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all ${
+            className={`group relative flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all ${
               active
                 ? "bg-slate-950 text-white shadow-sm shadow-slate-950/10 dark:bg-cyan-600 dark:shadow-cyan-950/20"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white"
+                : "text-slate-600 hover:translate-x-1 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white"
             }`}
           >
+            {active && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-cyan-300 dark:bg-white" />}
             <Icon className={`size-4 shrink-0 ${active ? "text-cyan-200 dark:text-white" : "text-slate-400 group-hover:text-cyan-700 dark:text-slate-500 dark:group-hover:text-cyan-300"}`} />
             <span>{item.label}</span>
           </Link>
@@ -106,7 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileMenuPath(null)}
               aria-label="Close navigation"
             />
-            <aside className="relative h-full w-72 border-r border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+            <aside className="relative h-full w-72 animate-menu-sheet border-r border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
               <Brand close={() => setMobileMenuPath(null)} />
               <Navigation pathname={pathname} role={me.data?.role} onNavigate={() => setMobileMenuPath(null)} />
             </aside>
@@ -174,7 +175,7 @@ function Brand({ close }: { close?: () => void }) {
   return (
     <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-6 dark:border-slate-800">
       <Link href="/" onClick={close} className="flex min-w-0 items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm shadow-slate-950/20 dark:bg-cyan-600 dark:shadow-cyan-950/20">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm shadow-slate-950/20 transition-transform duration-200 hover:scale-105 dark:bg-cyan-600 dark:shadow-cyan-950/20">
           <Warehouse className="size-5" />
         </span>
         <span>

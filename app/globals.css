@@ -89,8 +89,13 @@ button {
 }
 
 ::selection {
-  background: #bae6fd;
+  background: #cffafe;
   color: #0f172a;
+}
+
+.dark ::selection {
+  background: rgb(8 145 178 / 0.45);
+  color: #f8fafc;
 }
 
 .input {
@@ -124,7 +129,29 @@ button {
 @keyframes page-slide-in {
   from {
     opacity: 0;
-    transform: translateX(18px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
   }
   to {
     opacity: 1;
@@ -132,8 +159,74 @@ button {
   }
 }
 
+@keyframes menu-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes search-glow {
+  from {
+    box-shadow: 0 0 0 0 rgb(6 182 212 / 0.24);
+  }
+  to {
+    box-shadow: 0 0 0 4px rgb(6 182 212 / 0.12);
+  }
+}
+
+@keyframes result-rise {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-page-slide {
-  animation: page-slide-in 220ms ease-out both;
+  animation: page-slide-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-soft-rise {
+  animation: soft-rise 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in-left {
+  animation: fade-in-left 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-menu-sheet {
+  animation: menu-sheet-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-pop-in {
+  animation: pop-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-result-rise {
+  animation: result-rise 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.search-input-motion:focus {
+  animation: search-glow 180ms ease-out both;
 }
 
 /* Legacy page headers are replaced by the persistent dashboard shell. */
@@ -179,6 +272,12 @@ button {
 .app-shell-content section.rounded-lg {
   border-color: var(--border);
   box-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 12px 32px rgb(15 23 42 / 0.04);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.app-shell-content article:hover {
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 16px 42px rgb(15 23 42 / 0.08);
+  transform: translateY(-1px);
 }
 
 .app-shell-content article.bg-white,
@@ -196,11 +295,12 @@ button {
 }
 
 .app-shell-content tbody tr {
-  transition: background-color 140ms ease;
+  transition: background-color 140ms ease, transform 140ms ease;
 }
 
 .app-shell-content tbody tr:hover {
   background-color: #f8fafc;
+  transform: translateX(2px);
 }
 
 .dark .app-shell-content tbody tr:hover {
@@ -236,6 +336,7 @@ button {
 .app-shell-content textarea:focus {
   border-color: #0891b2;
   box-shadow: 0 0 0 4px rgb(103 232 249 / 0.28);
+  transform: translateY(-1px);
 }
 
 .app-shell-content button:not(:disabled),
@@ -298,5 +399,27 @@ button {
 
   .animate-page-slide {
     animation: none;
+  }
+
+  .animate-soft-rise,
+  .animate-fade-in-left,
+  .animate-menu-sheet,
+  .animate-pop-in,
+  .animate-result-rise {
+    animation: none;
+  }
+
+  .search-input-motion:focus {
+    animation: none;
+  }
+
+  .app-shell-content article:hover,
+  .app-shell-content tbody tr:hover,
+  .app-shell-content input:not([type="checkbox"]):not([type="radio"]):focus,
+  .app-shell-content select:focus,
+  .app-shell-content textarea:focus,
+  .app-shell-content button:not(:disabled):active,
+  .app-shell-content a[href]:active {
+    transform: none;
   }
 }
