@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import {
   Bell,
   Boxes,
@@ -24,6 +25,7 @@ import { NotificationButton } from "@/components/layout/notification-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UserProfileMenu } from "@/components/layout/user-profile-menu";
 import { canAccessAppRoute, useCurrentUser, type UserRole } from "@/lib/auth/current-user";
+import { createClient } from "@/lib/supabase/client";
 
 const navigation = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -41,7 +43,45 @@ const navigation = [
 
 const shellFreeRoutes = ["/login", "/forgot-password", "/reset-password", "/auth"];
 
-function Navigation({ pathname, role, onNavigate }: { pathname: string; role?: UserRole; onNavigate?: () => void }) {
+function Navigation({
+  pathname,
+  role,
+  loading,
+  failed,
+  onRetry,
+  onNavigate,
+}: {
+  pathname: string;
+  role?: UserRole;
+  loading?: boolean;
+  failed?: boolean;
+  onRetry?: () => void;
+  onNavigate?: () => void;
+}) {
+  if (loading) {
+    return (
+      <nav className="space-y-2 px-3 py-5" aria-label="Loading navigation">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="h-11 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800/70" />
+        ))}
+      </nav>
+    );
+  }
+
+  if (failed) {
+    return (
+      <nav className="px-3 py-5" aria-label="Navigation unavailable">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="font-semibold">Session profile unavailable</p>
+          <p className="mt-1 text-xs leading-5">Refresh your session to load role-based navigation.</p>
+          <button type="button" onClick={onRetry} className="mt-3 h-9 rounded-md bg-amber-700 px-3 text-xs font-semibold text-white hover:bg-amber-600">
+            Retry
+          </button>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className="space-y-1.5 px-3 py-5">
       {navigation.filter((item) => canAccessAppRoute(item.href, role)).map((item) => {
@@ -82,12 +122,40 @@ function Navigation({ pathname, role, onNavigate }: { pathname: string; role?: U
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const me = useCurrentUser();
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
   const mobileOpen = mobileMenuPath === pathname;
+  const authStatus = axios.isAxiosError(me.error) ? me.error.response?.status : undefined;
+  const sessionInvalid = authStatus === 401 || authStatus === 403;
+  const loginPath = useMemo(() => {
+    const next = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname)}`;
+    return `/login${next}`;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!sessionInvalid) return;
+    let active = true;
+    void createClient().auth.signOut().finally(() => {
+      if (!active) return;
+      router.replace(loginPath);
+      router.refresh();
+    });
+    return () => { active = false; };
+  }, [loginPath, router, sessionInvalid]);
 
   if (shellFreeRoutes.some((route) => pathname.startsWith(route))) {
     return children;
+  }
+
+  if (sessionInvalid) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          Redirecting to sign in...
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -96,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen">
         <aside className="hidden w-72 shrink-0 border-r border-slate-200 bg-white/95 shadow-sm dark:border-slate-800 dark:bg-slate-900/95 lg:block">
           <Brand />
-          <Navigation pathname={pathname} role={me.data?.role} />
+          <Navigation pathname={pathname} role={me.data?.role} loading={me.isLoading} failed={me.isError} onRetry={() => void me.refetch()} />
         </aside>
 
         {mobileOpen && (
@@ -109,7 +177,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
             <aside className="relative h-full w-72 animate-menu-sheet border-r border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
               <Brand close={() => setMobileMenuPath(null)} />
-              <Navigation pathname={pathname} role={me.data?.role} onNavigate={() => setMobileMenuPath(null)} />
+              <Navigation pathname={pathname} role={me.data?.role} loading={me.isLoading} failed={me.isError} onRetry={() => void me.refetch()} onNavigate={() => setMobileMenuPath(null)} />
             </aside>
           </div>
         )}
