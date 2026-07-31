@@ -10,10 +10,21 @@ export async function updateSession(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+  const pathname = request.nextUrl.pathname;
+  const isPublicRoute = publicRoutes.includes(pathname);
+  const isCallback = pathname.startsWith("/auth/callback");
+  const supabaseConfig = getSupabaseProxyConfig();
+
+  if (!supabaseConfig) {
+    if (!isPublicRoute && !isCallback) {
+      return applyFrontendSecurityHeaders(redirectToLogin(request), nonce);
+    }
+    return applyFrontendSecurityHeaders(response, nonce);
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
+    supabaseConfig.url,
+    supabaseConfig.key,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
@@ -27,17 +38,21 @@ export async function updateSession(request: NextRequest) {
       },
     },
   );
-  const { data: { user } } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
-  const isPublicRoute = publicRoutes.includes(pathname);
+  let user = null;
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  } catch {
+    if (!isPublicRoute && !isCallback) {
+      return applyFrontendSecurityHeaders(redirectToLogin(request), nonce);
+    }
+    return applyFrontendSecurityHeaders(response, nonce);
+  }
+
   const isGuestOnlyRoute = guestOnlyRoutes.includes(pathname);
-  const isCallback = pathname.startsWith("/auth/callback");
 
   if (!user && !isPublicRoute && !isCallback) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return applyFrontendSecurityHeaders(NextResponse.redirect(url), nonce);
+    return applyFrontendSecurityHeaders(redirectToLogin(request), nonce);
   }
   if (user && isGuestOnlyRoute) {
     const url = request.nextUrl.clone();
@@ -46,4 +61,27 @@ export async function updateSession(request: NextRequest) {
     return applyFrontendSecurityHeaders(NextResponse.redirect(url), nonce);
   }
   return applyFrontendSecurityHeaders(response, nonce);
+}
+
+function redirectToLogin(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = "/login";
+  url.searchParams.set("next", request.nextUrl.pathname);
+  return NextResponse.redirect(url);
+}
+
+function getSupabaseProxyConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+      ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )?.trim();
+  if (!url || !key) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return null;
+    return { url: parsed.origin, key };
+  } catch {
+    return null;
+  }
 }
