@@ -6,6 +6,7 @@ import { LoaderCircle, LogIn } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { safeInternalPath } from "@/lib/auth/safe-redirect";
+import { api } from "@/lib/api";
 
 export function LoginForm({ nextPath }: { nextPath?: string }) {
   const router = useRouter();
@@ -38,6 +39,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
         setError(sessionError.message);
         return;
       }
+      api.defaults.headers.common.Authorization = `Bearer ${session.access_token}`;
       router.replace(safeInternalPath(nextPath));
       router.refresh();
     } catch (error) {

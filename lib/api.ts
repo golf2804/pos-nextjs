@@ -6,8 +6,23 @@ export const api = axios.create({
   timeout: 15_000,
 });
 
+async function getSessionWithTimeout() {
+  return Promise.race([
+    createClient().auth.getSession(),
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => {
+        reject(new Error("Supabase session lookup timed out."));
+      }, 5_000);
+    }),
+  ]);
+}
+
 api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await createClient().auth.getSession();
+  if (config.headers.Authorization) {
+    return config;
+  }
+
+  const { data: { session } } = await getSessionWithTimeout();
   if (session?.access_token) {
     config.headers.Authorization = `Bearer ${session.access_token}`;
   }
