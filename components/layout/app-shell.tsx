@@ -26,6 +26,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UserProfileMenu } from "@/components/layout/user-profile-menu";
 import { canAccessAppRoute, useCurrentUser, type UserRole } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/client";
+import { clearManagedAccessToken } from "@/lib/api";
 
 const navigation = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -136,6 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!sessionInvalid) return;
     let active = true;
+    clearManagedAccessToken();
     void createClient().auth.signOut().finally(() => {
       if (!active) return;
       router.replace(loginPath);

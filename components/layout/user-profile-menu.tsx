@@ -4,6 +4,7 @@ import { ChevronDown, LogOut, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/client";
+import { clearManagedAccessToken } from "@/lib/api";
 
 export function UserProfileMenu() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export function UserProfileMenu() {
     : me.isLoading ? "..." : "!";
 
   async function logout() {
+    clearManagedAccessToken();
     await createClient().auth.signOut();
     router.replace("/login");
     router.refresh();

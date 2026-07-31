@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { clearManagedAccessToken } from "@/lib/api";
 
 export function LogoutButton() {
   const router = useRouter();
   async function logout() {
+    clearManagedAccessToken();
     await createClient().auth.signOut();
     router.replace("/login");
     router.refresh();
