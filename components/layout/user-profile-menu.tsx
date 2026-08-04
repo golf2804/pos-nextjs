@@ -18,9 +18,17 @@ export function UserProfileMenu() {
 
   async function logout() {
     clearManagedAccessToken();
-    await createClient().auth.signOut();
-    router.replace("/login");
-    router.refresh();
+    try {
+      await Promise.race([
+        createClient().auth.signOut(),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Sign out timed out.")), 5_000)),
+      ]);
+    } catch {
+      // Local token cleanup above is enough to prevent further API requests.
+    } finally {
+      router.replace("/login");
+      router.refresh();
+    }
   }
 
   return (
