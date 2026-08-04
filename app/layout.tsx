@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -20,11 +21,13 @@ export const metadata: Metadata = {
   description: "Inventory management system for products, stock movement, suppliers, reports, and users.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="th"
@@ -32,7 +35,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-stone-50 font-sans text-slate-950 dark:bg-slate-950 dark:text-slate-100">
-        <Script id="theme-bootstrap" strategy="beforeInteractive">
+        <Script id="theme-bootstrap" strategy="beforeInteractive" nonce={nonce}>
           {`try{const t=localStorage.getItem("theme");const d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light"}catch{}`}
         </Script>
         <Providers>
