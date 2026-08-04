@@ -15,6 +15,10 @@ export async function updateSession(request: NextRequest) {
   const isCallback = pathname.startsWith("/auth/callback");
   const supabaseConfig = getSupabaseProxyConfig();
 
+  if (isServerAuthProxyDisabled()) {
+    return applyFrontendSecurityHeaders(response, nonce);
+  }
+
   if (!supabaseConfig) {
     if (!isPublicRoute && !isCallback) {
       return applyFrontendSecurityHeaders(redirectToLogin(request), nonce);
@@ -84,4 +88,8 @@ function getSupabaseProxyConfig() {
   } catch {
     return null;
   }
+}
+
+function isServerAuthProxyDisabled() {
+  return process.env.NODE_ENV !== "production" && process.env.DISABLE_SERVER_AUTH_PROXY === "true";
 }
