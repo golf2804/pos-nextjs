@@ -66,8 +66,8 @@ export function UserEditorForm({
     username: values.username.trim().toLowerCase(),
     fullName: values.fullName.trim(),
     roleCode: values.roleCode,
-    status: values.status,
     password: editing ? undefined : values.password,
+    ...(editing ? { status: values.status } : {}),
   }));
 
   return (
