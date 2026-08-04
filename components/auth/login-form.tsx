@@ -40,7 +40,8 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
         return;
       }
       setManagedAccessToken(session.access_token);
-      router.replace(safeInternalPath(nextPath));
+      const destination = safeInternalPath(nextPath);
+      router.replace(destination === "/login" ? "/" : destination);
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown network error";

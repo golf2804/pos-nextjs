@@ -123,6 +123,21 @@ function Navigation({
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  if (shellFreeRoutes.some((route) => pathname.startsWith(route))) {
+    return children;
+  }
+
+  return <ProtectedAppShell pathname={pathname}>{children}</ProtectedAppShell>;
+}
+
+function ProtectedAppShell({
+  pathname,
+  children,
+}: {
+  pathname: string;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const me = useCurrentUser();
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
@@ -145,10 +160,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
     return () => { active = false; };
   }, [loginPath, router, sessionInvalid]);
-
-  if (shellFreeRoutes.some((route) => pathname.startsWith(route))) {
-    return children;
-  }
 
   if (sessionInvalid) {
     return (
